@@ -5,10 +5,11 @@ ENV CUDA_PATH /usr/local/cuda
 ENV PATH ${ANACONDA}/bin:${CUDA_PATH}/bin:$PATH
 ENV LD_LIBRARY_PATH ${ANACONDA}/lib:${CUDA_PATH}/bin64:$LD_LIBRARY_PATH
 ENV C_INCLUDE_PATH ${CUDA_PATH}/include
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
          wget \
 	 apt-utils \
-	 axel \
+	 axel 
 #         imagemagick \
 #         libopencv-dev \
 #         python-opencv \
@@ -41,3 +42,4 @@ RUN rm /tmp/Anaconda3-5.0.1-Linux-x86_64.sh -rf
 RUN conda install -y -c anaconda pip 
 RUN pip install scikit-umfpack
 RUN pip install cupy-cuda91
+RUN pip uninstall numpy -y
