@@ -12,3 +12,15 @@ WEBHOOK=http://-
 CHANNEL=nallab
 ```
 
+2. ビルドする
+
+```
+$ go build
+```
+
+3. 実行する
+
+```
+./slack
+```
+
