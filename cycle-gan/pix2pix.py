@@ -3,22 +3,44 @@
 
 import os
 import time
-from absl import flags
 import tensorflow as tf
 
 assert tf.__version__.startswith('2')
 
-FLAGS = flags.FLAGS
-
-flags.DEFINE_integer('buffer_size', 400, 'Shuffle buffer size')
-flags.DEFINE_integer('batch_size', 1, 'Batch Size')
-flags.DEFINE_integer('epochs', 1, 'Number of epochs')
-flags.DEFINE_string('path', None, 'Path to the data folder')
-flags.DEFINE_boolean('enable_function', True, 'Enable Function?')
-
 IMG_WIDTH = 256
 IMG_HEIGHT = 256
 AUTOTUNE = tf.data.experimental.AUTOTUNE
+
+
+class InstanceNormalization(tf.keras.layers.Layer):
+    """
+    Instance Normalization Layer(https://arxiv.org/abs/1607.08022).
+    """
+
+    def __init__(self, epsilon=1e-5):
+        super(InstanceNormalization, self).__init__()
+        self.epsilon = epsilon
+
+    def build(self, input_shape):
+        self.scale = self.add_weight(
+            name='scale',
+            shape=input_shape[-1:],
+            initializer=tf.random_normal_initializer(1., 0.02),
+            trainable=True,
+        )
+
+        self.offset = self.add_weight(
+            name='offset',
+            shape=input_shape[-1:],
+            initializer='zeros',
+            trainable=True,
+        )
+
+    def call(self, x):
+        mean, variance = tf.nn.moments(x, axes=[1, 2], keepdims=True)
+        inv = tf.math.rsqrt(variance + self.epsilon)
+        normalized = (x - mean) * inv
+        return self.scale * normalized + self.offset
 
 
 def load(image_file):
@@ -45,12 +67,15 @@ def load(image_file):
 
 def downsample(filters, size, norm_type='batchnrom', apply_norm=True):
     """
+    Downsamples an input.
 
-    :param filters:
-    :param size:
-    :param norm_type:
-    :param apply_norm:
-    :return:
+    Conv2D => Batchnorm => LeakyRelu
+
+    :param filters: number of filters
+    :param size: filter size
+    :param norm_type: Nomarization type; either 'batchnorm' or 'instancenorm'
+    :param apply_norm: If True, adds the batchnorm layer
+    :return: Downsample Sequential Model
     """
     initializer = tf.random_normal_initializer(0., 0.02)
 
@@ -64,8 +89,7 @@ def downsample(filters, size, norm_type='batchnrom', apply_norm=True):
         if norm_type.lower() == 'batchnorm':
             result.add(tf.keras.layers.BatchNormalization())
         elif norm_type.lower() == 'instancenorm':
-            pass
-            # result.add(InstanceNormalization())
+            result.add(InstanceNormalization())
 
     result.add(tf.keras.layers.LeakyReLU())
 
@@ -74,12 +98,15 @@ def downsample(filters, size, norm_type='batchnrom', apply_norm=True):
 
 def upsample(filters, size, norm_type='batchnorm', apply_dropout=False):
     """
+    Upsamples an Input.
 
-    :param filters:
-    :param size:
-    :param norm_type:
-    :param apply_dropout:
-    :return:
+    Conv2DTranspose => Batchnorm => Dropout => Relu
+
+    :param filters: number of filters
+    :param size: filter size
+    :param norm_type: Normalization type; either 'batchnorm' or 'instancenorm'
+    :param apply_dropout: If True, adds the dropout layer
+    :return: Upsample Sequential Model
     """
 
     initializer = tf.random_normal_initializer(0., 0.02)
@@ -95,8 +122,8 @@ def upsample(filters, size, norm_type='batchnorm', apply_dropout=False):
     if norm_type.lower() == 'batchnorm':
         result.add(tf.keras.layers.BatchNormalization())
     elif norm_type.lower() == 'instancenorm':
-        # result.add(InstanceNormalization())
-        pass
+        result.add(InstanceNormalization())
+
     if apply_dropout:
         result.add(tf.keras.layers.Dropout(0.5))
 
@@ -107,10 +134,11 @@ def upsample(filters, size, norm_type='batchnorm', apply_dropout=False):
 
 def unet_generator(output_channels, norm_type='batchnorm'):
     """
+    Modified u-net generator model
     
-    :param output_channels: 
-    :param norm_type: 
-    :return: 
+    :param output_channels: Output channels
+    :param norm_type: Type of normalization, Either 'batchnorm' or 'instancenorm'
+    :return: Generator model
     """
 
     down_stack = [
@@ -168,9 +196,9 @@ def discriminator(norm_type='batchnorm', target=True):
     """
     PatchGan discriminator model (https://arxiv.org/abs/1611.07004).
 
-    :param norm_type:
-    :param target:
-    :return:
+    :param norm_type: Type of normalization, Either 'batchnorm' or 'instancenorm'.
+    :param target: Bool, indicating whether target image is an input or not.
+    :return: Discriminator model
     """
 
     initializer = tf.random_normal_initializer(0., 0.02)
@@ -179,7 +207,7 @@ def discriminator(norm_type='batchnorm', target=True):
     x = inp
 
     if target:
-        tar = tf.keras.layers.Input(shape=[None,None, 3], name='target_image')
+        tar = tf.keras.layers.Input(shape=[None, None, 3], name='target_image')
         x = tf.keras.layers.concatenate([inp, tar])
 
     down1 = downsample(64, 4, norm_type, False)(x)
@@ -194,8 +222,7 @@ def discriminator(norm_type='batchnorm', target=True):
     if norm_type.lower() == 'batchnorm':
         norm1 = tf.keras.layers.BatchNormalization()(conv)
     elif norm_type.lower() == 'instancenorm':
-        # norm1 = InstanceNormalization()(conv)
-        pass
+        norm1 = InstanceNormalization()(conv)
 
     leaky_relu = tf.keras.layers.LeakyReLU()(norm1)
 
@@ -209,8 +236,6 @@ def discriminator(norm_type='batchnorm', target=True):
         return tf.keras.Model(inputs=[inp, tar], outputs=last)
     else:
         return tf.keras.Model(inputs=inp, outputs=last)
-
-
 
 # def run_main(argv):
 #    del argv
@@ -237,4 +262,3 @@ def discriminator(norm_type='batchnorm', target=True):
 #
 # if __name__ == '__main__':
 #    app.run(run_main)
-

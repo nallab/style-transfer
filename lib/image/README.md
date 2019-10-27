@@ -62,7 +62,7 @@ $ mogrify -resize 256x256 -quality 100 image_*.jpg
 あとは、データを実行環境にもっていく。
 ```
 $ scp -r ./new_data USER@IPADRESS:
-$ scp -r ./old USER@IPADRESS:
+$ scp -r ./old_data USER@IPADRESS:
 ```
 
 
