@@ -135,7 +135,7 @@ def upsample(filters, size, norm_type='batchnorm', apply_dropout=False):
 def unet_generator(output_channels, norm_type='batchnorm'):
     """
     Modified u-net generator model
-    
+
     :param output_channels: Output channels
     :param norm_type: Type of normalization, Either 'batchnorm' or 'instancenorm'
     :return: Generator model
