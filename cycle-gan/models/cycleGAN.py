@@ -1,6 +1,7 @@
 import time
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import datetime
 from models import pix2pix
 
 from tensorflow.keras.models import load_model
@@ -31,6 +32,12 @@ class CycleGAN(object):
         self.generator_f = pix2pix.unet_generator(output_channels=3, norm_type='instancenorm')
         self.discriminator_x = pix2pix.discriminator(norm_type='instancenorm', target=False)
         self.discriminator_y = pix2pix.discriminator(norm_type='instancenorm', target=False)
+
+        # Define our metrics
+        self.generator_g_loss = tf.keras.metrics.Mean('generator_g_loss', dtype=tf.float32)
+        self.generator_f_loss = tf.keras.metrics.Mean('generator_f_loss', dtype=tf.float32)
+        self.discriminator_x_loss = tf.keras.metrics.Mean('discriminator_x_loss', dtype=tf.float32)
+        self.discriminator_y_loss = tf.keras.metrics.Mean('discriminator_y_loss', dtype=tf.float32)
 
         #  CheckPoint
         self.checkpoint_dir = checkpoint_dir
@@ -133,11 +140,22 @@ class CycleGAN(object):
         self.discriminator_y_optimizer.apply_gradients(zip(discriminator_y_gradients,
                                                            self.discriminator_y.trainable_variables))
 
+        # Loss for TensorBoard
+        self.generator_g_loss(total_gen_g_loss)
+        self.generator_f_loss(total_gen_f_loss)
+        self.discriminator_x_loss(disc_x_loss)
+        self.discriminator_y_loss(disc_y_loss)
+
     def train(self, domain_a, domain_b):
         """
         Train the CycleGAN
         """
         self.load_checkpoint(self.checkpoint_dir)
+
+        #  Set up summary writers
+        current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        train_log_dir = 'logs/gradient_tape/' + current_time + '/train'
+        train_summary_writer = tf.summary.create_file_writer(train_log_dir)
 
         for epoch in range(self.epochs):
             print("[*] Epoch {}".format(epoch))
@@ -149,13 +167,33 @@ class CycleGAN(object):
                     print('.', end='')
                 n += 1
 
+            # Set scalar for TensorBoard
+            with train_summary_writer.as_default():
+                tf.summary.scalar('Generator_g_Loss', self.generator_g_loss.result(), step=epoch)
+                tf.summary.scalar('Generator_f_Loss', self.generator_f_loss.result(), step=epoch)
+                tf.summary.scalar('Discriminator_x_Loss', self.discriminator_x_loss.result(), step=epoch)
+                tf.summary.scalar('Discriminator_y_Loss', self.discriminator_y_loss.result(), step=epoch)
+
             if (epoch + 1) % 5 == 0:
                 ckpt_save_path = self.checkpoint_manager.save()
                 print('Saving checkpoint for epoch {} at {}'.format(epoch + 1,
                                                                     ckpt_save_path))
-
             print('Time taken for epoch {} is {} sec\n'.format(epoch + 1,
                                                                time.time() - start))
+
+            template = 'gen_g_loss: {}, gen_f_loss: {}, disc_x_loss: {}, disc_y_loss: {}'
+            print(template.format(
+                self.generator_g_loss.result(),
+                self.generator_f_loss.result(),
+                self.discriminator_x_loss.result(),
+                self.discriminator_y_loss.result(),
+            ))
+
+            # Reset metrics every epoch
+            self.generator_g_loss.reset_states()
+            self.generator_f_loss.reset_states()
+            self.discriminator_x_loss.reset_states()
+            self.discriminator_y_loss.reset_states()
 
     def test(self, old):
         """Test the CycleGAN"""
