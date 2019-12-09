@@ -5,7 +5,7 @@ import tensorflow as tf
 from absl import flags
 from absl import app
 from glob import glob
-from keras.preprocessing.image import load_img, img_to_array
+from tensorflow.keras.preprocessing.image import load_img, img_to_array
 
 FLAGS = flags.FLAGS
 

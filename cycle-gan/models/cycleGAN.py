@@ -3,6 +3,8 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from models import pix2pix
 
+from tensorflow.keras.models import load_model
+
 
 class CycleGAN(object):
     """
@@ -138,6 +140,7 @@ class CycleGAN(object):
         self.load_checkpoint(self.checkpoint_dir)
 
         for epoch in range(self.epochs):
+            print("[*] Epoch {}".format(epoch))
             start = time.time()
             n = 0
             for image_x, image_y in tf.data.Dataset.zip((domain_a, domain_b)):

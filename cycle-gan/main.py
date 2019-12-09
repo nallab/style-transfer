@@ -11,6 +11,7 @@ from absl import flags
 from models import cycleGAN
 
 from util import utils
+
 # import test
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
@@ -57,13 +58,13 @@ def random_jitter(image):
 
 
 # 第2引数に label があったが、使っていなかったので削除
-def preprocess_image_train(image, label):
+def preprocess_image_train(image):
     image = random_jitter(image)
     image = normalize(image)
     return image
 
 
-def preprocess_image_test(image, label):
+def preprocess_image_test(image):
     image = normalize(image)
     return image
 
@@ -80,30 +81,30 @@ def preprocess_image(image):
 #    print(inp)
 #    generate_images(generator_f, inp)
 
-def get_test_data():
-    dataset, metadata = tfds.load('cycle_gan/horse2zebra',
-                                  with_info=True, as_supervised=True)
-
-    train_horses, train_zebras = dataset['trainA'], dataset['trainB']
-    test_horses, test_zebras = dataset['testA'], dataset['testB']
-
-    train_horses = train_horses.map(
-        preprocess_image_train, num_parallel_calls=AUTOTUNE).cache().shuffle(
-        1000).batch(1)
-
-    train_zebras = train_zebras.map(
-        preprocess_image_train, num_parallel_calls=AUTOTUNE).cache().shuffle(
-        1000).batch(1)
-
-    test_horses = test_horses.map(
-        preprocess_image_test, num_parallel_calls=AUTOTUNE).cache().shuffle(
-        1000).batch(1)
-
-    test_zebras = test_zebras.map(
-        preprocess_image_test, num_parallel_calls=AUTOTUNE).cache().shuffle(
-        1000).batch(1)
-
-    return train_horses, train_zebras, test_horses, test_zebras
+# def get_test_data():
+#    dataset, metadata = tfds.load('cycle_gan/horse2zebra',
+#                                  with_info=True, as_supervised=True)
+#
+#    train_horses, train_zebras = dataset['trainA'], dataset['trainB']
+#    test_horses, test_zebras = dataset['testA'], dataset['testB']
+#
+#    train_horses = train_horses.map(
+#        preprocess_image_train, num_parallel_calls=AUTOTUNE).cache().shuffle(
+#        1000).batch(1)
+#
+#    train_zebras = train_zebras.map(
+#        preprocess_image_train, num_parallel_calls=AUTOTUNE).cache().shuffle(
+#        1000).batch(1)
+#
+#    test_horses = test_horses.map(
+#        preprocess_image_test, num_parallel_calls=AUTOTUNE).cache().shuffle(
+#        1000).batch(1)
+#
+#    test_zebras = test_zebras.map(
+#        preprocess_image_test, num_parallel_calls=AUTOTUNE).cache().shuffle(
+#        1000).batch(1)
+#
+#    return train_horses, train_zebras, test_horses, test_zebras
 
 def run_main(argv):
     del argv
@@ -113,32 +114,38 @@ def run_main(argv):
         'batch_size': FLAGS.batch_size,
         'checkpoint_dir': FLAGS.checkpoint_dir,
     }
+    print("----------")
+    print(kwargs)
+    print("----------")
 
     main(**kwargs)
 
 
 def main(epochs, buffer_size, batch_size, checkpoint_dir):
-    print("START!!")
+    print("[*]START!!")
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
-        print("{} not found. create it".format(checkpoint_dir))
+        print("[*]{} not found. create it".format(checkpoint_dir))
 
     cycle_gan_object = cycleGAN.CycleGAN(epochs, checkpoint_dir)
 
-    old_images, new_images, test_horses, _ = get_test_data()
+    # old_images, new_images, test_horses, _ = get_test_data()
 
-    #  new_data = tf.data.TFRecordDataset('new.tfrec').map(preprocess_image)
-    #  new_images = new_data.map(preprocess_image_train, num_parallel_calls=AUTOTUNE) \
-    #      .cache().shuffle(buffer_size).batch(batch_size)
-    #  old_data = tf.data.TFRecordDataset('old.tfrec').map(preprocess_image)
-    #  old_images = old_data.map(preprocess_image_train, num_parallel_calls=AUTOTUNE) \
-    #      .cache().shuffle(buffer_size).batch(batch_size)
+    new_data = tf.data.TFRecordDataset('new.tfrec').map(preprocess_image)
+    new_images = new_data.map(preprocess_image_train, num_parallel_calls=AUTOTUNE) \
+        .take(buffer_size).cache().shuffle(buffer_size).batch(batch_size)
+    # .cache().shuffle(buffer_size).batch(batch_size)
+    old_data = tf.data.TFRecordDataset('old.tfrec').map(preprocess_image)
+    old_images = old_data.map(preprocess_image_train, num_parallel_calls=AUTOTUNE) \
+        .take(buffer_size).cache().shuffle(buffer_size).batch(batch_size)
+    #  .cache().shuffle(buffer_size).batch(batch_size)
 
-    #  return cycle_gan_object.train(old_images, new_images)
-    cycle_gan_object.test(test_horses)
+    cycle_gan_object.train(old_images, new_images)
+
+    # save model
+    cycle_gan_object.save('my_model.h5')
+    # cycle_gan_object.test(test_horses)
 
 
 if __name__ == '__main__':
     app.run(run_main)
-
-
