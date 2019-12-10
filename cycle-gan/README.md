@@ -6,7 +6,7 @@ cycleGAN用の実験リポジトリ
 プログラムの都合上、画像データはPATHのTFRecord形式にする必要がある
 
 ```
-$ python util/proper.py  --old_iamge_path /root/old_data --new_image_path /root/new_data
+$ python util/proper.py  --old_image_path /root/old_data --new_image_path /root/new_data
 ```
 
 `main.py`

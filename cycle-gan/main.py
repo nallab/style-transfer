@@ -9,21 +9,17 @@ from absl import app
 from absl import flags
 
 from models import cycleGAN
-
 from util import utils
-
-# import test
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_integer('buffer_size', 1000, 'Shuffle  size')
+flags.DEFINE_integer('buffer_size', 1000, 'Shuffle  size')  # default 1000
 flags.DEFINE_integer('batch_size', 1, 'Batch size')
-flags.DEFINE_integer('epochs', 40, 'Number of epochs')
+flags.DEFINE_integer('epochs', 80, 'Number of epochs')  # default 40
 flags.DEFINE_string('checkpoint_dir', "./checkpoints/train", 'Path to the data folder')
 # flags.DEFINE_string('path', None, 'Path to the data folder')
-
 
 IMG_WIDTH = 256
 IMG_HEIGHT = 256
@@ -140,10 +136,16 @@ def main(epochs, buffer_size, batch_size, checkpoint_dir):
         .take(buffer_size).cache().shuffle(buffer_size).batch(batch_size)
     #  .cache().shuffle(buffer_size).batch(batch_size)
 
+    # Test data
+    # test_data = tf.data.TFRecordDataset('test_new.tfrec').map(preprocess_image)
+    # test_images = test_data.map(preprocess_image_train, num_parallel_calls=AUTOTUNE) \
+    #     .cache().shuffle(buffer_size).batch(batch_size)
+
+    # cycle_gan_object.test(test_images)
+
+    # Train
     cycle_gan_object.train(old_images, new_images)
 
-    # save model
-    cycle_gan_object.save('my_model.h5')
     # cycle_gan_object.test(test_horses)
 
 

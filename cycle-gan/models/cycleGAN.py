@@ -1,3 +1,4 @@
+import os
 import time
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -195,25 +196,38 @@ class CycleGAN(object):
             self.discriminator_x_loss.reset_states()
             self.discriminator_y_loss.reset_states()
 
-    def test(self, old):
+        # Store model
+        # self.generator_g.summary()
+        # self.generator_g.save('g_g.h5')
+        # self.generator_f.save('g_f.h5')
+        # self.discriminator_x.save('d_x.h5')
+        # self.discriminator_y.save('d_y.h5')
+
+    def test(self, test_input):
         """Test the CycleGAN"""
+        # 学習ずみ保存モデルからロードする、なければ終了
+        # if not os.path.exists('g_g.h5'):
+        #     print("学習ずみモデルがないよー")
+        #     return
 
         self.load_checkpoint(self.checkpoint_dir)
-        for inp in old.take(5):
-            self.generate_images(inp)
 
-    def generate_images(self, test_input):
-        prediction = self.generator_g(test_input)
+        # generator = tf.keras.models.load_model('g_g.h5')
+        # generator = self.generator_g
+        generator = self.generator_f
+        # print(generator.summary())
 
-        plt.figure(figsize=(12, 12))
-
-        display_list = [test_input[0], prediction[0]]
-        title = ['Input Image', 'Predicted Image']
-
-        for i in range(2):
-            plt.subplot(1, 2, i + 1)
-            plt.title(title[i])
-            # getting the pixel values between [0, 1] to plot it.
-            plt.imshow(display_list[i] * 0.5 + 0.5)
-            plt.axis('off')
-        plt.savefig("figure.png")
+        n = int(0)
+        for inp in test_input:
+            prediction = generator(inp)
+            plt.figure(figsize=(12, 12))
+            display_list = [inp[0], prediction[0]]
+            title = ['Input Image', 'Predicted Image']
+            for i in range(2):
+                plt.subplot(1, 2, i + 1)
+                plt.title(title[i])
+                # getting the pixel values between [0, 1] to plot it.
+                plt.imshow(display_list[i] * 0.5 + 0.5)
+                plt.axis('off')
+            plt.savefig("fig" + str(n))
+            n = n + 1
