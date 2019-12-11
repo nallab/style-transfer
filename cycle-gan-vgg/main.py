@@ -137,14 +137,14 @@ def main(epochs, buffer_size, batch_size, checkpoint_dir):
     #  .cache().shuffle(buffer_size).batch(batch_size)
 
     # Test data
-    test_data = tf.data.TFRecordDataset('test_new.tfrec').map(preprocess_image)
-    test_images = test_data.map(preprocess_image_train, num_parallel_calls=AUTOTUNE) \
-        .cache().shuffle(buffer_size).batch(batch_size)
+    # test_data = tf.data.TFRecordDataset('test_new.tfrec').map(preprocess_image)
+    # test_images = test_data.map(preprocess_image_train, num_parallel_calls=AUTOTUNE) \
+    #    .cache().shuffle(buffer_size).batch(batch_size)
 
-    cycle_gan_object.test(test_images)
+    # cycle_gan_object.test(test_images)
 
     # Train
-    # cycle_gan_object.train(old_images, new_images)
+    cycle_gan_object.train(old_images, new_images)
 
     # cycle_gan_object.test(test_horses)
 
