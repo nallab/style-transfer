@@ -6,9 +6,7 @@ from tensorflow.keras.layers import Conv2D
 
 import matplotlib.pyplot as plt
 import datetime
-
 from models import pix2pix
-
 from tensorflow.keras.models import load_model
 
 
@@ -58,8 +56,9 @@ class CycleGAN(object):
         )
         self.checkpoint_manager = tf.train.CheckpointManager(self.checkpoint, self.checkpoint_dir, max_to_keep=5)
 
-        input_shape = (256, 256, 3)
-        base_model = VGG16(weights="imagenet", include_top=False, input_shape=input_shape)
+        # input_shape = (256, 256, 3)
+        base_model = load_model('vgg16.h5')
+        # base_model = VGG16(weights="imagenet", include_top=False, input_shape=input_shape)
         tmp_vgg_output = base_model.get_layer("block4_conv3").output
         tmp_vgg_output = Conv2D(512, (3, 3), activation='linear', padding='same',
                                 name='block4_conv4')(tmp_vgg_output)
@@ -132,8 +131,10 @@ class CycleGAN(object):
             # Total generator loss = adversarial loss + cycle loss
             # total_gen_g_loss = gen_g_loss + total_cycle_loss + self.identity_loss(real_y, same_y)
             # total_gen_f_loss = gen_f_loss + total_cycle_loss + self.identity_loss(real_x, same_x)
-            total_gen_g_loss = gen_g_loss + total_cycle_loss + self.content_loss(real_y, same_y)
-            total_gen_f_loss = gen_f_loss + total_cycle_loss + self.content_loss(real_x, same_x)
+            total_gen_g_loss = gen_g_loss + total_cycle_loss + self.content_loss(real_y, same_y) + self.identity_loss(
+                real_y, same_y)
+            total_gen_f_loss = gen_f_loss + total_cycle_loss + self.content_loss(real_x, same_x) + self.identity_loss(
+                real_x, same_x)
             # total_gen_f_loss = gen_f_loss + total_cycle_loss + self.identity_loss(real_x, same_x)
 
             disc_x_loss = self.discriminator_loss(disc_real_x, disc_fake_x)
@@ -253,3 +254,35 @@ class CycleGAN(object):
                 plt.axis('off')
             plt.savefig("fig" + str(n))
             n = n + 1
+#
+#             sobel_inp = tf.image.sobel_edges(inp)
+#             sobel_prediction = tf.image.sobel_edges(prediction)
+#             # grad_inp_square = tf.math.reduce_sum(sobel_inp**2,axis=-1)
+#             # grad_prediction_square = tf.math.reduce_sum(sobel_prediction**2,axis=-1)
+#             # grad_inp = tf.sqrt(grad_inp_square)
+#             # grad_prediction = tf.sqrt(grad_prediction_square)
+#
+#             # VGG
+#             vgg_real_image = self.vgg(inp)
+#             # print(type(vgg_real_image))
+#             vgg_cycled_image = self.vgg(prediction)
+#             # print(type(vgg_cycled_image))
+#
+#             # display_list = [sobel_inp, sobel_prediction]
+#             # display_list = [grad_inp, grad_prediction_square]
+#             display_list = [vgg_real_image, vgg_cycled_image]
+#
+#             plt.figure(figsize=(12, 12))
+#             # display_list = [inp[0], prediction[0]]
+#             title = ['Input Image', 'Predicted Image']
+#             for i in range(2):
+#                 plt.subplot(1, 2, i + 1)
+#                 plt.title(title[i])
+#                 # getting the pixel values between [0, 1] to plot it.
+#                 # plt.imshow(display_list[i] * 0.5 + 0.5)
+#                 # self.imshow(tf.abs(display_list[i][...,1]/4+0.5,display_list[i][...,0]/4+0.5))
+#                 # self.imshow(display_list[i][...,0]/4)
+#                 # self.imshow(display_list[i])
+#                 plt.axis('off')
+#             plt.savefig("fig" + str(n))
+#             n = n + 1
