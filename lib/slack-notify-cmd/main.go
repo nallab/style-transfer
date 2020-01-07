@@ -19,7 +19,7 @@ func init() {
 
 func main() {
 	name := "報告者"
-	text := "Hello from go"
+	text := "順調じゃよ！"
 	channel := os.Getenv("CHANNEL")
 
 	jsonStr := `{"channel":"` + channel + `","username":"` + name + `","text":"` + text + `","icon_emoji":":ghost:"}"`

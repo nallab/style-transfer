@@ -8,6 +8,7 @@
 ### ffmpeg を install
 ```
 $ brew install ffmpeg
+$ brew install imagemagick
 ```
 
 ### 音声を動画データを分離
@@ -64,7 +65,6 @@ $ mogrify -resize 256x256 -quality 100 image_*.jpg
 $ scp -r ./new_data USER@IPADRESS:
 $ scp -r ./old_data USER@IPADRESS:
 ```
-
 
 
 

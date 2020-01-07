@@ -147,7 +147,7 @@ class CycleGAN(object):
         self.discriminator_x_loss(disc_x_loss)
         self.discriminator_y_loss(disc_y_loss)
 
-    def train(self, domain_a, domain_b):
+    def train(self, domain_a, domain_b, test_a, test_b):
         """
         Train the CycleGAN
         """
@@ -175,12 +175,27 @@ class CycleGAN(object):
                 tf.summary.scalar('Discriminator_x_Loss', self.discriminator_x_loss.result(), step=epoch)
                 tf.summary.scalar('Discriminator_y_Loss', self.discriminator_y_loss.result(), step=epoch)
 
+            # Save checkpoint.
             if (epoch + 1) % 5 == 0:
                 ckpt_save_path = self.checkpoint_manager.save()
-                print('Saving checkpoint for epoch {} at {}'.format(epoch + 1,
-                                                                    ckpt_save_path))
-            print('Time taken for epoch {} is {} sec\n'.format(epoch + 1,
-                                                               time.time() - start))
+                print('Saving checkpoint for epoch {} at {}'.format(epoch + 1, ckpt_save_path))
+
+            # Output transferred images.
+            if (epoch + 1) % 10 == 0:
+                output_dir_g = "output/" + "G" + str(epoch + 1)
+                self.test_transfer(test_a, self.generator_g, output_dir_g)
+                print('Transferring test_A for epoch {} at {}'.format(epoch + 1, output_dir_g))
+
+                output_dir_f = "output/" + "F" + str(epoch + 1)
+                self.test_transfer(test_b, self.generator_f, output_dir_f)
+                print('Transferring test_B for epoch {} at {}'.format(epoch + 1, output_dir_f))
+
+            # 監視
+            if (epoch + 1) % 20 == 0:
+                if os.path.exists("slack"):
+                    os.system("./slack")
+
+            print('Time taken for epoch {} is {} sec\n'.format(epoch + 1, time.time() - start))
 
             template = 'gen_g_loss: {}, gen_f_loss: {}, disc_x_loss: {}, disc_y_loss: {}'
             print(template.format(
@@ -203,8 +218,33 @@ class CycleGAN(object):
         # self.discriminator_x.save('d_x.h5')
         # self.discriminator_y.save('d_y.h5')
 
+    def test_transfer(self, test_input, generator, output_dir):
+        """
+        経過観察用のテスト関数
+        """
+
+        os.mkdir(output_dir)
+
+        n = int(0)
+        for inp in test_input:
+            prediction = generator(inp)
+            plt.figure(figsize=(12, 12))
+            display_list = [inp[0], prediction[0]]
+            title = ['Input Image', 'Predicted Image']
+            for i in range(2):
+                plt.subplot(1, 2, i + 1)
+                plt.title(title[i])
+                # getting the pixel values between [0, 1] to plot it.
+                plt.imshow(display_list[i] * 0.5 + 0.5)
+                plt.axis('off')
+            plt.savefig(output_dir + "/fig" + str(n))
+            n = n + 1
+
     def test(self, test_input):
-        """Test the CycleGAN"""
+        """
+        Test the CycleGAN
+        """
+
         # 学習ずみ保存モデルからロードする、なければ終了
         # if not os.path.exists('g_g.h5'):
         #     print("学習ずみモデルがないよー")
@@ -229,5 +269,5 @@ class CycleGAN(object):
                 # getting the pixel values between [0, 1] to plot it.
                 plt.imshow(display_list[i] * 0.5 + 0.5)
                 plt.axis('off')
-            plt.savefig("fig" + str(n))
+            plt.savefig("a/fig" + str(n))
             n = n + 1
