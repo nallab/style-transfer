@@ -6,6 +6,7 @@
 ## 
 
 ### ffmpeg を install
+メインPC が Mac であるため、Homebrew を使って ffmpeg を install します
 ```
 $ brew install ffmpeg
 $ brew install imagemagick
@@ -16,7 +17,7 @@ $ brew install imagemagick
 また、`.mov`から`mp4`に形式を変換します。
 
 ```
-$ ffmpeg -i new.mov -an new.mpr
+$ ffmpeg -i new.mov -an new.mp4
 ```
 
 `-i`がinput、`-an`がaudio disable。
@@ -26,13 +27,14 @@ $ ffmpeg -i new.mov -an new.mpr
 
 ### 動画の比率の変更
 長方形は使いづらいので、正方形に比率を変更する。
+
 ```
 $ ffmpeg -i new.mp4 -vf crop=956:956 new_resize.mp4
 $ ffmpeg -i old.mp4 -vf crop=956:956 old_resize.mp4
 ```
 
 crop の数値は、キャプチャした画像の縦幅の最大値。
-つまり、横幅の外側部分は部分は切り捨てられる。
+つまり、**横幅の外側部分は部分は切り捨てられる**。
 
 ### 動画を画像に分解
 動画を画像データに分解していく。

@@ -17,7 +17,7 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_integer('buffer_size', 1000, 'Shuffle  size')  # default 1000
 flags.DEFINE_integer('batch_size', 1, 'Batch size')
-flags.DEFINE_integer('epochs', 80, 'Number of epochs')  # default 40
+flags.DEFINE_integer('epochs', 100, 'Number of epochs')  # default 40
 flags.DEFINE_string('checkpoint_dir', "./checkpoints/train", 'Path to the data folder')
 # flags.DEFINE_string('path', None, 'Path to the data folder')
 
@@ -137,14 +137,15 @@ def main(epochs, buffer_size, batch_size, checkpoint_dir):
     #  .cache().shuffle(buffer_size).batch(batch_size)
 
     # Test data
-    # test_data = tf.data.TFRecordDataset('test_new.tfrec').map(preprocess_image)
-    # test_images = test_data.map(preprocess_image_train, num_parallel_calls=AUTOTUNE) \
-    #    .cache().shuffle(buffer_size).batch(batch_size)
+    test_data = tf.data.TFRecordDataset('new.tfrec').map(preprocess_image)  # .map(preprocess_image)
+    test_images = test_data.map(preprocess_image_test, num_parallel_calls=AUTOTUNE) \
+        .cache().shuffle(buffer_size).batch(batch_size)
 
-    # cycle_gan_object.test(test_images)
+    # Test
+    cycle_gan_object.test(test_images)
 
     # Train
-    cycle_gan_object.train(old_images, new_images)
+    # cycle_gan_object.train(old_images, new_images)
 
     # cycle_gan_object.test(test_horses)
 
