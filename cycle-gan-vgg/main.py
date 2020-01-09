@@ -3,7 +3,6 @@ import time
 import numpy as np
 from glob import glob
 import tensorflow as tf
-import tensorflow_datasets as tfds
 
 from absl import app
 from absl import flags
@@ -17,8 +16,12 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_integer('buffer_size', 1000, 'Shuffle  size')  # default 1000
 flags.DEFINE_integer('batch_size', 1, 'Batch size')
-flags.DEFINE_integer('epochs', 100, 'Number of epochs')  # default 40
+flags.DEFINE_integer('epochs', 200, 'Number of epochs')  # default 40
 flags.DEFINE_string('checkpoint_dir', "./checkpoints/train", 'Path to the data folder')
+
+# Parameter
+flags.DEFINE_integer('cycle_loss_weight', 10, 'Value of cycle_loss weight')
+flags.DEFINE_integer('content_loss_weight', 1, 'Value of content_loss weight')
 # flags.DEFINE_string('path', None, 'Path to the data folder')
 
 IMG_WIDTH = 256
@@ -109,6 +112,8 @@ def run_main(argv):
         'buffer_size': FLAGS.buffer_size,
         'batch_size': FLAGS.batch_size,
         'checkpoint_dir': FLAGS.checkpoint_dir,
+        'cycle_lambda': FLAGS.cycle_loss_weight,
+        'content_lambda': FLAGS.content_loss_weight,
     }
     print("----------")
     print(kwargs)
@@ -117,35 +122,37 @@ def run_main(argv):
     main(**kwargs)
 
 
-def main(epochs, buffer_size, batch_size, checkpoint_dir):
+def main(epochs, buffer_size, batch_size, checkpoint_dir, cycle_lambda, content_lambda):
     print("[*]START!!")
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
         print("[*]{} not found. create it".format(checkpoint_dir))
 
-    cycle_gan_object = cycleGAN.CycleGAN(epochs, checkpoint_dir)
+    cycle_gan_object = cycleGAN.CycleGAN(epochs, checkpoint_dir, cycle_lambda, content_lambda)
 
     # old_images, new_images, test_horses, _ = get_test_data()
 
+    # Input train data.
     new_data = tf.data.TFRecordDataset('new.tfrec').map(preprocess_image)
     new_images = new_data.map(preprocess_image_train, num_parallel_calls=AUTOTUNE) \
         .take(buffer_size).cache().shuffle(buffer_size).batch(batch_size)
-    # .cache().shuffle(buffer_size).batch(batch_size)
     old_data = tf.data.TFRecordDataset('old.tfrec').map(preprocess_image)
     old_images = old_data.map(preprocess_image_train, num_parallel_calls=AUTOTUNE) \
         .take(buffer_size).cache().shuffle(buffer_size).batch(batch_size)
-    #  .cache().shuffle(buffer_size).batch(batch_size)
 
-    # Test data
-    test_data = tf.data.TFRecordDataset('new.tfrec').map(preprocess_image)  # .map(preprocess_image)
-    test_images = test_data.map(preprocess_image_test, num_parallel_calls=AUTOTUNE) \
+    # Input test data.
+    test_new_data = tf.data.TFRecordDataset('test_new.tfrec').map(preprocess_image)
+    test_new_images = test_new_data.map(preprocess_image_train, num_parallel_calls=AUTOTUNE) \
+        .cache().shuffle(buffer_size).batch(batch_size)
+    test_old = tf.data.TFRecordDataset('test_old.tfrec').map(preprocess_image)
+    test_old_images = test_old.map(preprocess_image_train, num_parallel_calls=AUTOTUNE) \
         .cache().shuffle(buffer_size).batch(batch_size)
 
     # Test
-    cycle_gan_object.test(test_images)
+    # cycle_gan_object.test(test_images)
 
     # Train
-    # cycle_gan_object.train(old_images, new_images)
+    cycle_gan_object.train(old_images, new_images, test_old_images, test_new_images)
 
     # cycle_gan_object.test(test_horses)
 

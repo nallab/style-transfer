@@ -6,7 +6,11 @@ cycleGAN用の実験リポジトリ
 プログラムの都合上、画像データはPATHのTFRecord形式にする必要がある
 
 ```
-$ python util/proper.py  --old_image_path /root/old_data --new_image_path /root/new_data
+$ python util/proper.py \ 
+--old_image_path datasets/Domain/doraemon/_old_draemon \
+--new_image_path datasets/Domain/doraemon/_new_draemon \
+--test_old_image_path datasets/Domain/doraemon/_test_old_doraemon \
+--test_new_image_path datasets/Domain/doraemon/_test_new_doraemon
 ```
 
 `main.py`

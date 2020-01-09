@@ -9,10 +9,10 @@ from tensorflow.keras.preprocessing.image import load_img, img_to_array
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('old_image_path', '/home/datasets/old_data', 'Path to the data folder')
-flags.DEFINE_string('new_image_path', '/home/datasets/new_data', 'Path to the data folder')
-flags.DEFINE_string('test_old_image_path', '/home/datasets/testdata_old', 'Path to the data folder')
-flags.DEFINE_string('test_new_image_path', '/home/datasets/testdata_new', 'Path to the data folder')
+flags.DEFINE_string('old_image_path', "./datasets/original_data", 'Path to the data folder')
+flags.DEFINE_string('new_image_path', "./datasets/remake_data", 'Path to the data folder')
+flags.DEFINE_string('test_old_image_path', "./datasets/test_original", 'Path to the data folder')
+flags.DEFINE_string('test_new_image_path', "./datasets/test_remake", 'Path to the data folder')
 
 
 # old_label = [str(0) for i in range(len(old_paths))]
