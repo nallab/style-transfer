@@ -2,12 +2,18 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/joho/godotenv"
+)
+
+var (
+	name    = flag.String("n", "報告者", "Who is ?")
+	message = flag.String("m", "順調じゃよ！", "Message")
 )
 
 func init() {
@@ -18,11 +24,10 @@ func init() {
 }
 
 func main() {
-	name := "報告者"
-	text := "順調じゃよ！"
+	flag.Parse()
 	channel := os.Getenv("CHANNEL")
 
-	jsonStr := `{"channel":"` + channel + `","username":"` + name + `","text":"` + text + `","icon_emoji":":ghost:"}"`
+	jsonStr := `{"channel":"` + channel + `","username":"` + *name + `","text":"` + *message + `","icon_emoji":":ghost:"}"`
 
 	req, err := http.NewRequest(
 		"POST",
