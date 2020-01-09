@@ -143,10 +143,10 @@ def main(epochs, buffer_size, batch_size, checkpoint_dir, cycle_lambda, content_
     # Input test data.
     test_new_data = tf.data.TFRecordDataset('test_new.tfrec').map(preprocess_image)
     test_new_images = test_new_data.map(preprocess_image_test, num_parallel_calls=AUTOTUNE) \
-        .cache().repeat().batch(batch_size)
+        .cache().batch(batch_size)
     test_old_data = tf.data.TFRecordDataset('test_old.tfrec').map(preprocess_image)
     test_old_images = test_old_data.map(preprocess_image_test, num_parallel_calls=AUTOTUNE) \
-        .cache().repeat().batch(batch_size)
+        .cache().batch(batch_size)
 
     # Test
     # cycle_gan_object.test(test_images)
