@@ -18,8 +18,9 @@ class CycleGAN(object):
     CycleGAN class.
     """
 
-    def __init__(self, epochs, checkpoint_dir, cycle_lambda, content_lambda):
+    def __init__(self, epochs, checkpoint_dir, vgg, cycle_lambda, content_lambda):
         self.epochs = epochs
+        self.isVgg = vgg
         self.cycle_lambda = cycle_lambda
         self.content_lambda = content_lambda
         self.lambda_value = 10
@@ -101,7 +102,6 @@ class CycleGAN(object):
         vgg_real_image = self.vgg(real_image)
         vgg_cycled_image = self.vgg(cycled_image)
         loss = tf.reduce_mean(tf.abs(vgg_real_image - vgg_cycled_image))
-
         return self.content_lambda * loss
 
     @tf.function
@@ -135,23 +135,23 @@ class CycleGAN(object):
             total_cycle_loss = self.calc_cycle_loss(real_x, cycled_x) + self.calc_cycle_loss(real_y, cycled_y)
 
             # L_con = E[ || VGG(G(p)) - VGG(p) || ]
-            content_loss = self.calc_content_loss(real_x, fake_y)
+            if self.isVgg:
+                content_loss = self.calc_content_loss(real_x, fake_y)
+            else:
+                content_loss = 0
 
             # Total generator loss = adversarial loss + cycle loss
             # total_gen_g_loss = gen_g_loss + total_cycle_loss + self.identity_loss(real_y, same_y)
             # total_gen_f_loss = gen_f_loss + total_cycle_loss + self.identity_loss(real_x, same_x)
 
-            total_gen_g_loss = gen_g_loss + total_cycle_loss + content_loss + self.identity_loss(real_y, same_y)
+            total_gen_g_loss = gen_g_loss + total_cycle_loss + self.identity_loss(real_y, same_y) + content_loss
+            total_gen_f_loss = gen_f_loss + total_cycle_loss + self.identity_loss(real_x, same_x)
+
 
             # ??間違い g の loss だと contetnは入力の前と出力のl1ノルムの必要があるのでは？？？
             # total_gen_g_loss = gen_g_loss + total_cycle_loss + self.content_loss(real_y, same_y) + self.identity_loss(
             #    real_y, same_y)
 
-            # ドメインY側のcontent_loss は省いた
-            # total_gen_f_loss = gen_f_loss + total_cycle_loss + self.content_loss(real_x, same_x) + self.identity_loss(real_x, same_x)
-
-            total_gen_f_loss = gen_f_loss + total_cycle_loss + self.identity_loss(real_x, same_x)
-            # total_gen_f_loss = gen_f_loss + total_cycle_loss + self.identity_loss(real_x, same_x)
 
             disc_x_loss = self.discriminator_loss(disc_real_x, disc_fake_x)
             disc_y_loss = self.discriminator_loss(disc_real_y, disc_fake_y)
@@ -314,6 +314,7 @@ class CycleGAN(object):
                 # getting the pixel values between [0, 1] to plot it.
                 plt.imshow(display_list[i] * 0.5 + 0.5)
                 plt.axis('off')
+            plt.tight_layout()
             plt.savefig("fig" + str(n))
             n = n + 1
             plt.close()

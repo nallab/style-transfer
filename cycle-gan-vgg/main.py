@@ -18,6 +18,7 @@ flags.DEFINE_integer('buffer_size', 1000, 'Shuffle  size')  # default 1000
 flags.DEFINE_integer('batch_size', 1, 'Batch size')
 flags.DEFINE_integer('epochs', 200, 'Number of epochs')  # default 40
 flags.DEFINE_string('checkpoint_dir', "./checkpoints/train", 'Path to the data folder')
+flags.DEFINE_bool('vgg', True, "Use VGG")
 
 # Parameter
 flags.DEFINE_integer('cycle_loss_weight', 10, 'Value of cycle_loss weight')
@@ -112,6 +113,7 @@ def run_main(argv):
         'buffer_size': FLAGS.buffer_size,
         'batch_size': FLAGS.batch_size,
         'checkpoint_dir': FLAGS.checkpoint_dir,
+        'vgg': FLAGS.vgg,
         'cycle_lambda': FLAGS.cycle_loss_weight,
         'content_lambda': FLAGS.content_loss_weight,
     }
@@ -122,13 +124,13 @@ def run_main(argv):
     main(**kwargs)
 
 
-def main(epochs, buffer_size, batch_size, checkpoint_dir, cycle_lambda, content_lambda):
+def main(epochs, buffer_size, batch_size, checkpoint_dir, vgg, cycle_lambda, content_lambda):
     print("[*]START!!")
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
         print("[*]{} not found. create it".format(checkpoint_dir))
 
-    cycle_gan_object = cycleGAN.CycleGAN(epochs, checkpoint_dir, cycle_lambda, content_lambda)
+    cycle_gan_object = cycleGAN.CycleGAN(epochs, checkpoint_dir, vgg, cycle_lambda, content_lambda)
 
     # old_images, new_images, test_horses, _ = get_test_data()
 
