@@ -1,4 +1,4 @@
 numpy
 Pillow  # provides PIL
 scipy
-tensorflow-gpu==1.12.0
+tensorflow-gpu==2.6.4
